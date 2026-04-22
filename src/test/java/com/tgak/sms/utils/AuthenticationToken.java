@@ -2,14 +2,10 @@ package com.tgak.sms.utils;
 
 import static io.restassured.RestAssured.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.json.JSONObject;
 
-import io.qameta.allure.internal.shadowed.jackson.core.JsonProcessingException;
-import io.qameta.allure.internal.shadowed.jackson.databind.ObjectMapper;
 import io.restassured.response.Response;
+import io.restassured.response.ResponseBody;
 
 public class AuthenticationToken {
 	public String userName;
@@ -37,30 +33,82 @@ public class AuthenticationToken {
 	}
 
 	public String getAuthToken(AuthenticationToken authenticationToken) {
-		// 1. Define the login credentials (can be a JSON string, Map, or POJO)
-//		Map<String, Object> payload = new HashMap<>();
-//		payload.put("username", authenticationToken.getUserName());
-//		payload.put("password", authenticationToken.getPassword());
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("username", authenticationToken.getUserName());
 		jsonObject.put("password", authenticationToken.getPassword());
 		System.out.println(jsonObject);
-		ObjectMapper mapper = new ObjectMapper();
+		String jsonPayload = "";
+		jsonPayload = jsonObject.toString();
+		System.out.println(jsonPayload.toString());
+		String jwtToken = given().header("Content-Type", "application/json").body(jsonPayload).when()
+				.post("http://34.68.7.223:8083/api/auth/signin").then().statusCode(200) // Verify successful login
+				.extract().path("accessToken"); // Extracts the value of the 'token' field from JSON response
+		return jwtToken;
+	}
+
+	public String getAuthTokenMethod1(AuthenticationToken authenticationToken) {
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("username", authenticationToken.getUserName());
+		jsonObject.put("password", authenticationToken.getPassword());
+		System.out.println(jsonObject);
 		String jsonPayload = "";
 		jsonPayload = jsonObject.toString();
 		System.out.println(jsonPayload.toString());
 		Response response = given().header("Content-Type", "application/json").body(jsonPayload).when()
 				.post("http://34.68.7.223:8083/api/auth/signin");
-		// 3. Extract the token from the response body
 		System.out.println(response.getStatusCode());
 		String token = response.jsonPath().getString("accessToken");
 		System.out.println(token);
 		return token;
 	}
-	public static void main(String str[]) {
-		AuthenticationToken authenticationToken = new AuthenticationToken("mode", "12345678");
-		String token = authenticationToken.getAuthToken(authenticationToken);
+
+	public String getAuthTokenMethod2(AuthenticationToken authenticationToken) {
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("username", authenticationToken.getUserName());
+		jsonObject.put("password", authenticationToken.getPassword());
+		System.out.println(jsonObject);
+		String jsonPayload = "";
+		jsonPayload = jsonObject.toString();
+		System.out.println(jsonPayload.toString());
+		Response response = given().header("Content-Type", "application/json").body(jsonPayload).when()
+				.post("http://34.68.7.223:8083/api/auth/signin").then().statusCode(200).extract().response();
+		String token = response.jsonPath().getString("accessToken");
 		System.out.println(token);
+		return token;
 	}
 
+	public String getAuthTokenMethod3(AuthenticationToken authenticationToken) {
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("username", authenticationToken.getUserName());
+		jsonObject.put("password", authenticationToken.getPassword());
+		System.out.println(jsonObject);
+		String jsonPayload = "";
+		jsonPayload = jsonObject.toString();
+		System.out.println(jsonPayload.toString());
+		String token = given().header("Content-Type", "application/json").body(jsonPayload).when()
+				.post("http://34.68.7.223:8083/api/auth/signin").then().statusCode(200).extract().response().jsonPath()
+				.getString("accessToken");
+		return token;
+	}
+
+	public void getAuthenticationDetailsAPICall(AuthenticationToken authenticationToken) {
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("username", authenticationToken.getUserName());
+		jsonObject.put("password", authenticationToken.getPassword());
+		System.out.println(jsonObject);
+		String jsonPayload = "";
+		jsonPayload = jsonObject.toString();
+		String statusLine = given().header("Content-Type", "application/json").body(jsonPayload).when()
+				.post("http://34.68.7.223:8083/api/auth/signin").then().statusCode(200).extract().response()
+				.getStatusLine();
+		System.out.println(statusLine);
+		ResponseBody response = given().header("Content-Type", "application/json").body(jsonPayload).when()
+				.post("http://34.68.7.223:8083/api/auth/signin").then().statusCode(200).extract().response().getBody();
+		System.out.println(response.asString());
+	}
+
+	public static void main(String str[]) {
+		AuthenticationToken authenticationToken = new AuthenticationToken("mode", "12345678");
+		authenticationToken.getAuthenticationDetailsAPICall(authenticationToken);
+	}
 }
